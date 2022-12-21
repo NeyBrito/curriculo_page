@@ -1,0 +1,80 @@
+_schema-version: "3.2"
+ID: curriculo
+version: 0.0.1
+modules:
+- name: curriculo-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: curriculo-destination-service
+    parameters:
+      content-target: true
+  - name: curriculo_html_repo_host
+    parameters:
+      service-key:
+        name: curriculo_html_repo_host-key
+  - name: uaa_curriculo
+    parameters:
+      service-key:
+        name: uaa_curriculo-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: curriculo_curriculo_html_repo_host
+          ServiceInstanceName: curriculo-html5-app-host-service
+          ServiceKeyName: curriculo_html_repo_host-key
+          sap.cloud.service: curriculo
+        - Authentication: OAuth2UserTokenExchange
+          Name: curriculo_uaa_curriculo
+          ServiceInstanceName: curriculo-xsuaa-service
+          ServiceKeyName: uaa_curriculo-key
+          sap.cloud.service: curriculo
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: curriculo_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: curriculo_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - curriculo-content.zip
+      name: curriculo
+      target-path: resources/
+- name: curriculo
+  type: html5
+  path: curriculo
+  build-parameters:
+    builder: custom
+    commands:
+    - npm install
+    - npm run build
+    supported-platforms: []
+resources:
+- name: curriculo-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: curriculo-destination-service
+    service-plan: lite
+- name: curriculo_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: curriculo-html5-app-host-service
+    service-plan: app-host
+- name: uaa_curriculo
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: curriculo-xsuaa-service
+    service-plan: application
